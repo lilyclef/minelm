@@ -2,9 +2,10 @@ module Main exposing (..)
 
 import Browser
 import Css exposing (..)
-import Html exposing (Html, button, div, text)
+import Html exposing (Html, button, div, h1, text)
 import Html.Events exposing (onClick)
-import Random
+import List.Extra exposing (..)
+-- import Random
 
 
 
@@ -22,16 +23,28 @@ main =
 type alias Model =
     Board
 
-diceLst : Int -> Random.Generator (List Int)
-diceLst n = Random.list n (Random.int 0 49)
+
+-- diceLst : Int -> Random.Generator (List Int)
+-- diceLst n =
+--     Random.list n (Random.int 0 49)
+
+setBom : Int -> List (Cell, State) -> List (Cell, State)
+setBom x = List.Extra.setAt x (Bom, Untouch)
 
 init : Model
 init =
-  let bomPos = diceLst 3
-  in
-    let n = 0
+    let
+        bomPos = [2, 14, 30, 40]
     in
-      Board (List.repeat 7 (List.repeat 7 ( Cell n, Untouch )))
+    let
+        n =
+            0
+    in
+    let
+        l =
+            List.foldl setBom (List.repeat 49 ( Cell n, Untouch )) bomPos
+    in
+    Board (List.Extra.greedyGroupsOf 7 l)
 
 
 type Board
@@ -70,7 +83,7 @@ colDivLst cell =
             button [ onClick Increment ] [ text (String.fromInt n) ]
 
         ( Bom, _ ) ->
-            button [ onClick Increment ] [ text "0" ]
+            button [ onClick Increment ] [ text "B" ]
 
 
 rowDivLst : List ( Cell, State ) -> Html Msg
@@ -87,5 +100,6 @@ view model =
     case model of
         Board c ->
             div []
-                [ div [] (List.map rowDivLst c)
+                [ h1 [] [ text "Mine" ]
+                , div [] (List.map rowDivLst c)
                 ]
