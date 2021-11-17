@@ -5,10 +5,10 @@ import Css exposing (..)
 import Html exposing (Html, button, div, h1, text)
 import Html.Events exposing (onClick)
 import List.Extra exposing (..)
+
+
+
 -- import Random
-
-
-
 -- MAIN
 
 
@@ -24,17 +24,62 @@ type alias Model =
     Board
 
 
+
 -- diceLst : Int -> Random.Generator (List Int)
 -- diceLst n =
 --     Random.list n (Random.int 0 49)
 
-setBom : Int -> List (Cell, State) -> List (Cell, State)
-setBom x = List.Extra.setAt x (Bom, Untouch)
+
+setBomCell : ( Cell, State ) -> ( Cell, State )
+setBomCell _ =
+    ( Bom, Untouch )
+
+
+increaseNumCell : ( Cell, State ) -> ( Cell, State )
+increaseNumCell x =
+    case x of
+        ( Cell n, s ) ->
+            ( Cell (n + 1), s )
+
+        ( Bom, _ ) ->
+            x
+
+
+setBom : Int -> List ( Cell, State ) -> List ( Cell, State )
+setBom x =
+    if modBy 7 x == 0 then
+        List.Extra.updateAt x setBomCell
+            >> List.Extra.updateAt (x + 1) increaseNumCell
+            >> List.Extra.updateAt (x + 8) increaseNumCell
+            >> List.Extra.updateAt (x - 6) increaseNumCell
+            >> List.Extra.updateAt (x + 7) increaseNumCell
+            >> List.Extra.updateAt (x - 7) increaseNumCell
+
+    else if modBy 7 x == 6 then
+        List.Extra.updateAt x setBomCell
+            >> List.Extra.updateAt (x - 1) increaseNumCell
+            >> List.Extra.updateAt (x - 8) increaseNumCell
+            >> List.Extra.updateAt (x + 6) increaseNumCell
+            >> List.Extra.updateAt (x + 7) increaseNumCell
+            >> List.Extra.updateAt (x - 7) increaseNumCell
+
+    else
+        List.Extra.updateAt x setBomCell
+            >> List.Extra.updateAt (x + 1) increaseNumCell
+            >> List.Extra.updateAt (x + 8) increaseNumCell
+            >> List.Extra.updateAt (x - 6) increaseNumCell
+            >> List.Extra.updateAt (x - 1) increaseNumCell
+            >> List.Extra.updateAt (x - 8) increaseNumCell
+            >> List.Extra.updateAt (x + 6) increaseNumCell
+            >> List.Extra.updateAt (x + 7) increaseNumCell
+            >> List.Extra.updateAt (x - 7) increaseNumCell
+
 
 init : Model
 init =
     let
-        bomPos = [2, 14, 30, 40]
+        bomPos =
+            [ 2, 14, 30, 40 ]
     in
     let
         n =
