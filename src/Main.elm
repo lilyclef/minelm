@@ -21,7 +21,7 @@ main =
 
 
 type alias Model =
-    Board
+    List (List ( Cell, State ))
 
 
 
@@ -33,6 +33,11 @@ type alias Model =
 setBomCell : ( Cell, State ) -> ( Cell, State )
 setBomCell _ =
     ( Bom, Untouch )
+
+
+setTouchedCell : ( Cell, State ) -> ( Cell, State )
+setTouchedCell ( c, s ) =
+    ( c, Touched )
 
 
 increaseNumCell : ( Cell, State ) -> ( Cell, State )
@@ -82,18 +87,10 @@ init =
             [ 2, 14, 30, 40 ]
     in
     let
-        n =
-            0
+        board =
+            List.foldl setBom (List.repeat 49 ( Cell 0, Untouch )) bomPos
     in
-    let
-        l =
-            List.foldl setBom (List.repeat 49 ( Cell n, Untouch )) bomPos
-    in
-    Board (List.Extra.greedyGroupsOf 7 l)
-
-
-type Board
-    = Board (List (List ( Cell, State )))
+    List.Extra.greedyGroupsOf 7 board
 
 
 type Cell
@@ -103,6 +100,7 @@ type Cell
 
 type State
     = Untouch
+    | Touched
     | Flag
 
 
@@ -111,24 +109,40 @@ type State
 
 
 type Msg
-    = Increment
+    = Open (Cell, State)
+    | OpenBom
+    | SetFlag
 
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        Increment ->
+        Open c ->
+            (List.Extra.greedyGroupsOf 7 (List.Extra.updateIf ((==)c) setTouchedCell (List.concat model)))
+        OpenBom ->
+            model
+
+        SetFlag ->
             model
 
 
 colDivLst : ( Cell, State ) -> Html Msg
 colDivLst cell =
     case cell of
-        ( Cell n, _ ) ->
-            button [ onClick Increment ] [ text (String.fromInt n) ]
+        ( _, Flag ) ->
+            button [] [ text "F" ]
 
-        ( Bom, _ ) ->
-            button [ onClick Increment ] [ text "B" ]
+        ( Cell n, Touched ) ->
+            button [] [ text (String.fromInt n) ]
+
+        ( Cell n, Untouch ) ->
+            button [ onClick (Open cell) ] [ text "?" ]
+
+        ( Bom, Untouch ) ->
+            button [ onClick OpenBom ] [ text "?" ]
+
+        ( Bom, Touched ) ->
+            button [] [ text "B" ]
 
 
 rowDivLst : List ( Cell, State ) -> Html Msg
@@ -142,9 +156,7 @@ rowDivLst input =
 
 view : Model -> Html Msg
 view model =
-    case model of
-        Board c ->
-            div []
-                [ h1 [] [ text "Mine" ]
-                , div [] (List.map rowDivLst c)
-                ]
+    div []
+        [ h1 [] [ text "Mine" ]
+        , div [] (List.map rowDivLst model)
+        ]
