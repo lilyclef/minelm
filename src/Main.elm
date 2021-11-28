@@ -21,7 +21,7 @@ main =
 
 
 type alias Model =
-    List (List ( Cell, State ))
+    List (List ( Int, (Cell, State) ))
 
 
 
@@ -30,27 +30,27 @@ type alias Model =
 --     Random.list n (Random.int 0 49)
 
 
-setBomCell : ( Cell, State ) -> ( Cell, State )
+setBomCell : (Cell, State) -> (Cell, State)
 setBomCell _ =
-    ( Bom, Untouch )
+    (Bom, Untouch)
 
 
-setTouchedCell : ( Cell, State ) -> ( Cell, State )
-setTouchedCell ( c, s ) =
-    ( c, Touched )
+setTouchedCell : ( Int, (Cell, State) ) -> ( Int, (Cell, State) )
+setTouchedCell (i, (c, s) ) =
+    (i, (c, Touched) )
 
 
-increaseNumCell : ( Cell, State ) -> ( Cell, State )
+increaseNumCell : ( Cell, State) -> (Cell, State)
 increaseNumCell x =
     case x of
-        ( Cell n, s ) ->
-            ( Cell (n + 1), s )
+        (Cell n, s) ->
+            (Cell (n + 1), s)
 
-        ( Bom, _ ) ->
+        (Bom, _) ->
             x
 
 
-setBom : Int -> List ( Cell, State ) -> List ( Cell, State )
+setBom : Int -> List (Cell, State) -> List (Cell, State)
 setBom x =
     if modBy 7 x == 0 then
         List.Extra.updateAt x setBomCell
@@ -88,9 +88,9 @@ init =
     in
     let
         board =
-            List.foldl setBom (List.repeat 49 ( Cell 0, Untouch )) bomPos
+            List.foldl setBom (List.repeat 49 (Cell 0, Untouch)) bomPos
     in
-    List.Extra.greedyGroupsOf 7 board
+    List.Extra.greedyGroupsOf 7 (List.indexedMap Tuple.pair board)
 
 
 type Cell
@@ -109,8 +109,8 @@ type State
 
 
 type Msg
-    = Open (Cell, State)
-    | OpenBom
+    = Open (Int, (Cell, State))
+    | OpenBom (Int, (Cell, State))
     | SetFlag
 
 
@@ -119,33 +119,32 @@ update msg model =
     case msg of
         Open c ->
             (List.Extra.greedyGroupsOf 7 (List.Extra.updateIf ((==)c) setTouchedCell (List.concat model)))
-        OpenBom ->
-            model
-
+        OpenBom c ->
+            (List.Extra.greedyGroupsOf 7 (List.Extra.updateIf ((==)c) setTouchedCell (List.concat model)))
         SetFlag ->
             model
 
 
-colDivLst : ( Cell, State ) -> Html Msg
+colDivLst : ( Int, (Cell, State) ) -> Html Msg
 colDivLst cell =
     case cell of
-        ( _, Flag ) ->
+        (_, (_, Flag) ) ->
             button [] [ text "F" ]
 
-        ( Cell n, Touched ) ->
+        (_, (Cell n, Touched) ) ->
             button [] [ text (String.fromInt n) ]
 
-        ( Cell n, Untouch ) ->
+        (_, (Cell _, Untouch) ) ->
             button [ onClick (Open cell) ] [ text "?" ]
 
-        ( Bom, Untouch ) ->
-            button [ onClick OpenBom ] [ text "?" ]
+        (_, (Bom, Untouch) ) ->
+            button [ onClick (OpenBom cell) ] [ text "?" ]
 
-        ( Bom, Touched ) ->
-            button [] [ text "B" ]
+        (_, (Bom, Touched) ) ->
+            button [] [ text "🔥" ]
 
 
-rowDivLst : List ( Cell, State ) -> Html Msg
+rowDivLst : List (Int, (Cell, State) ) -> Html Msg
 rowDivLst input =
     div [] (List.map colDivLst input)
 
